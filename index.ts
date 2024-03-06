@@ -16,7 +16,11 @@ server.register(import('@fastify/rate-limit'), {
 
 const blockList = new BlockList();
 
-blockList.addSubnet('10.0.0.0', 8, 'ipv4');
+blockList.addSubnet('10.0.0.0', 8, 'ipv4'); // RFC1918 - Private Use
+blockList.addSubnet('100.64.0.0', 10, 'ipv4'); // RFC6598 - CGNAT
+blockList.addSubnet('172.16.0.0', 12, 'ipv4'); // RFC1918 - Private Use
+blockList.addSubnet('192.168.0.0', 16, 'ipv4'); // RFC1918 - Private Use
+blockList.addSubnet('fc00::', 7, 'ipv6'); // RFC4193 - ULA
 
 const validateSubnet = (subnet: string) => {
     const ip = subnet.split('/')[0]
