@@ -27,4 +27,4 @@ jobs:
               platforms: linux/amd64
               builder: ${{ steps.buildx.outputs.name }} 
               push: true
-              tags: ghcr.io/kittensaredabest/caramel:latest
+              tags: ghcr.io/potvinp/caramel:latest
