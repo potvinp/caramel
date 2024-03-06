@@ -15,6 +15,7 @@ server.register(import('@fastify/rate-limit'), {
 })
 
 const blockList = new BlockList();
+
 blockList.addSubnet('10.0.0.0', 8, 'ipv4');
 
 const validateSubnet = (subnet: string) => {
@@ -31,18 +32,28 @@ const validateSubnet = (subnet: string) => {
         if (cidr < 0 || cidr > 32) {
             return false
         }
-        if (blockList.check(subnet, 'ipv4')) return false;
         return true
     }
     if (ipVersion === 6) {
         if (cidr < 0 || cidr > 128) {
             return false
         }
-        if (blockList.check(subnet, 'ipv6')) return false;
         return true
     }
 
     return false
+}
+
+const isInBlocklist = (input: string) => {
+    const ipVersion = isIP(input);
+
+    if (ipVersion === 4) {
+        return blockList.check(input, 'ipv4');
+    } else if (ipVersion === 6) {
+        return blockList.check(input, 'ipv6');
+    }
+
+    return false;
 }
 
 server.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -69,6 +80,9 @@ server.post('/lg', async (request: FastifyRequest, reply: FastifyReply) => {
             if (!isIP(validation.target) && !isValidDomain(validation.target)) {
                 return reply.status(400).send({ "error": "Invalid IP/Domain" });
             }
+            if (isInBlocklist(validation.target)) {
+                return reply.status(400).send({ "error": "Invalid IP/Domain (Bogon)" });
+            }
             const mtr = spawn.spawnSync('mtr', ['-c', '5', '-r', '-w', '-b', validation.target]);
             return reply.status(200).send({ "data": mtr.stdout.toString().length > 0 ? mtr.stdout.toString() : mtr.stderr.toString() });
 
@@ -79,6 +93,9 @@ server.post('/lg', async (request: FastifyRequest, reply: FastifyReply) => {
             if (!isIP(validation.target) && !isValidDomain(validation.target)) {
                 return reply.status(400).send({ "error": "Invalid IP/Domain" });
             }
+            if (isInBlocklist(validation.target)) {
+                return reply.status(400).send({ "error": "Invalid IP/Domain (Bogon)" });
+            }
             const traceroute = spawn.spawnSync('traceroute', ['-w', '1', '-q', '1', validation.target]);
             return reply.status(200).send({ "data": traceroute.stdout.toString().length > 0 ? traceroute.stdout.toString() : traceroute.stderr.toString() });
 
@@ -88,6 +105,9 @@ server.post('/lg', async (request: FastifyRequest, reply: FastifyReply) => {
             }
             if (!isIP(validation.target) && !isValidDomain(validation.target)) {
                 return reply.status(400).send({ "error": "Invalid IP/Domain" });
+            }
+            if (isInBlocklist(validation.target)) {
+                return reply.status(400).send({ "error": "Invalid IP/Domain (Bogon)" });
             }
             const ping = spawn.spawnSync('ping', ['-c', '5', validation.target]);
             return reply.status(200).send({ "data": ping.stdout.toString().length > 0 ? ping.stdout.toString() : ping.stderr.toString() });
