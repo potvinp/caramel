@@ -2,7 +2,7 @@ import fastify, { FastifyReply, FastifyRequest } from 'fastify'
 import spawn from 'child_process'
 import cors from '@fastify/cors'
 import { z } from "zod";
-import { isIP, blockList } from 'net';
+import { isIP, BlockList } from 'net';
 import isValidDomain from 'is-valid-domain';
 
 const server = fastify()
