@@ -2,7 +2,7 @@ import fastify, { FastifyReply, FastifyRequest } from 'fastify'
 import spawn from 'child_process'
 import cors from '@fastify/cors'
 import { z } from "zod";
-import { isIP, BlockList } from 'net';
+import { isIP, BlockList, IPVersion } from 'net';
 import isValidDomain from 'is-valid-domain';
 
 const server = fastify()
@@ -31,17 +31,15 @@ const validateSubnet = (subnet: string) => {
         if (cidr < 0 || cidr > 32) {
             return false
         }
+        if (blockList.check(subnet, 'ipv4')) return false;
         return true
     }
     if (ipVersion === 6) {
         if (cidr < 0 || cidr > 128) {
             return false
         }
+        if (blockList.check(subnet, 'ipv6')) return false;
         return true
-    }
-
-    if (blockList.check(subnet, 'ipv' + ipVersion)) {
-        return false;
     }
 
     return false
