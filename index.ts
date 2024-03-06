@@ -2,7 +2,7 @@ import fastify, { FastifyReply, FastifyRequest } from 'fastify'
 import spawn from 'child_process'
 import cors from '@fastify/cors'
 import { z } from "zod";
-import { isIP } from 'net';
+import { isIP, blockList } from 'net';
 import isValidDomain from 'is-valid-domain';
 
 const server = fastify()
@@ -13,6 +13,9 @@ server.register(import('@fastify/rate-limit'), {
     max: 30,
     timeWindow: '1 minute'
 })
+
+const blockList = new BlockList();
+blockList.addSubnet('10.0.0.0', 8, 'ipv4');
 
 const validateSubnet = (subnet: string) => {
     const ip = subnet.split('/')[0]
@@ -36,6 +39,11 @@ const validateSubnet = (subnet: string) => {
         }
         return true
     }
+
+    if (blockList.check(subnet, 'ipv' + ipVersion)) {
+        return false;
+    }
+
     return false
 }
 
